@@ -1,0 +1,21 @@
+torch==2.3.0+cu121       
+torchvision==0.18.0+cu121   
+timm==0.9.16                
+omegaconf==2.3.0
+effdet==0.3.0               
+numpy==1.26.4
+pandas==2.2.2
+matplotlib==3.8.4
+tqdm==4.66.4
+pycocotools==2.0.7         
+opencv-python==4.10.0.82    
+onnx==1.16.0
+onnxruntime-gpu==1.18.0     
+pycuda==2024.1
+tensorrt==10.0.0.post12.1   
+Pillow==10.3.0              
+pyyaml
+numpy
+
+
+python3 train.py   /media/ibrahim/SSD2/Work/Dataset/VOC2007   --model efficientdet_d0   --dataset voc2007   --batch-size 3   --epochs 20   --num-classes 21   --amp   --output output/d0_softplus_fp16
