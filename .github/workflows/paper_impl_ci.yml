@@ -1,13 +1,13 @@
 name: paper-implementation-ci
 
 on:
-  push:
-    branches: [dynamic-bifpn-paper-implementation]
   pull_request:
     paths:
       - 'paper_impl/**'
       - 'pyproject.toml'
+      - 'README.md'
       - '.github/workflows/paper_impl_ci.yml'
+  workflow_dispatch:
 
 jobs:
   tests:
