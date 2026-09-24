@@ -43,7 +43,7 @@ def default_detection_model_configs():
     h.norm_layer = None  # defaults to batch norm when None
     h.norm_kwargs = dict(eps=.001, momentum=.01)
     h.box_class_repeats = 3
-    h.fpn_cell_repeats =  2,  #  Modified to 2 for BiFPN simplification (Softplus fusion support)
+    h.fpn_cell_repeats = 2  # legacy default; canonical paper implementation is under paper_impl/
 #  Modified: Reduced from 3 to 2 for custom BiFPN (Softplus fusion)
     h.fpn_channels = 90
     h.separable_conv = True

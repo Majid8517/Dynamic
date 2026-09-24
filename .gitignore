@@ -135,3 +135,12 @@ dmypy.json
 *.tar
 *.pth
 *.gz
+
+
+# Paper implementation outputs
+runs/
+checkpoints/
+*.pt
+*.onnx
+*.engine
+*.plan
