@@ -1,0 +1,8 @@
+torch>=2.1
+torchvision>=0.16
+timm>=0.9.12
+Pillow>=9.5
+PyYAML>=6.0
+numpy>=1.24
+pycocotools>=2.0.7
+pytest>=7.4
