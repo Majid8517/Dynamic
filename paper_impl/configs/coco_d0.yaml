@@ -12,6 +12,15 @@ model:
     ema_rho: 0.999
     distill_intermediate_weight: 0.5
     distill_final_weight: 0.5
+    ablation_id: FULL
+    adaptive_weights: true
+    use_polarity: true
+    use_softplus: true
+    use_positive_normalization: true
+    dual_bottom_up: true
+    share_bottom_up: true
+    use_polarity_regularization: true
+    use_ema_distillation: true
 train:
   epochs: 30
   batch_size: 16
