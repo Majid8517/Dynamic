@@ -83,3 +83,40 @@ PyTorch timing is labeled as PyTorch timing and must not be reported as TensorRT
 
 ## Historical-result boundary
 This package implements the manuscript method. It does not automatically establish provenance for historical table values. A result should be described as reproduced by this package only after the corresponding data split, checkpoint, evaluator, and runtime logs are archived.
+
+
+## Executable controlled ablations
+
+The repository now exposes a prospective **A0-A8** mechanism-isolation matrix
+under `paper_impl/configs/ablations/`.  Each successive configuration changes
+exactly one mechanism:
+
+```text
+A0  fixed-fusion TD->BU reference
+A1  + learnable adaptive edge weights
+A2  + polarity-aware modulation
+A3  + Softplus-positive re-parameterization
+A4  + epsilon-stabilized positive normalization
+A5  + complementary BU- pass with independent parameters
+A6  + shared BU+/BU- parameters
+A7  + polarity-magnitude regularization
+A8  + EMA topology-aware distillation (canonical full model)
+```
+
+Validate the matrix:
+
+```bash
+python -m paper_impl.ablation --validate
+```
+
+Train a selected variant after setting dataset paths in its YAML:
+
+```bash
+python -m paper_impl.train \
+  --config paper_impl/configs/ablations/coco_d0_a8_full_with_ema.yaml
+```
+
+See `ABLATION_PROTOCOL.md` for the exact switch matrix and claim boundary.
+The historical numbers in manuscript Table 3 are not automatically attributed
+to A0-A8; they become reproduced results only after controlled re-execution and
+archival of the corresponding run artifacts.
