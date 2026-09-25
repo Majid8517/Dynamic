@@ -26,5 +26,7 @@ jobs:
         run: python -m compileall -q paper_impl
       - name: Run smoke test
         run: python -m paper_impl.smoke_test
+      - name: Validate ablation matrix
+        run: python -m paper_impl.ablation --validate
       - name: Run unit and integration tests
         run: python -m pytest -q paper_impl/tests

@@ -6,6 +6,12 @@ import yaml
 
 @dataclass
 class DynamicBiFPNConfig:
+    """Canonical Dynamic BiFPN switches.
+
+    The defaults reproduce the full paper implementation.  The boolean switches
+    are intentionally explicit so each mechanism can be disabled in controlled
+    ablation configurations without maintaining divergent model copies.
+    """
     epsilon: float = 1e-4
     alpha_max: float = 0.95
     alpha_init: float = 0.02
@@ -14,6 +20,17 @@ class DynamicBiFPNConfig:
     ema_rho: float = 0.999
     distill_intermediate_weight: float = 0.5
     distill_final_weight: float = 0.5
+
+    # Reproducible mechanism switches. Full/canonical defaults are all enabled.
+    ablation_id: str = "FULL"
+    adaptive_weights: bool = True
+    use_polarity: bool = True
+    use_softplus: bool = True
+    use_positive_normalization: bool = True
+    dual_bottom_up: bool = True
+    share_bottom_up: bool = True
+    use_polarity_regularization: bool = True
+    use_ema_distillation: bool = True
 
     def validate(self) -> None:
         if self.epsilon <= 0:
@@ -29,6 +46,10 @@ class DynamicBiFPNConfig:
         s = self.distill_intermediate_weight + self.distill_final_weight
         if abs(s - 1.0) > 1e-6:
             raise ValueError("distillation stage weights must sum to 1")
+        if self.share_bottom_up and not self.dual_bottom_up:
+            raise ValueError("share_bottom_up is meaningful only when dual_bottom_up=True")
+        if self.use_polarity_regularization and not self.use_polarity:
+            raise ValueError("polarity regularization requires use_polarity=True")
 
 EFFICIENTDET_SCALES: Dict[str, Dict[str, Any]] = {
     "d0": dict(backbone="tf_efficientnet_b0", image_size=512, fpn_channels=64, fpn_repeats=3, head_repeats=3),

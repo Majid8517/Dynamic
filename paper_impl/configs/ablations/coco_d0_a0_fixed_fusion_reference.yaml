@@ -1,3 +1,5 @@
+# Prospective controlled ablation A0: fixed_fusion_reference
+# Historical manuscript values must NOT be assigned to this config until rerun.
 model:
   variant: d0
   num_classes: 80
@@ -12,15 +14,15 @@ model:
     ema_rho: 0.999
     distill_intermediate_weight: 0.5
     distill_final_weight: 0.5
-    ablation_id: FULL
-    adaptive_weights: true
-    use_polarity: true
-    use_softplus: true
-    use_positive_normalization: true
-    dual_bottom_up: true
-    share_bottom_up: true
-    use_polarity_regularization: true
-    use_ema_distillation: true
+    ablation_id: A0
+    adaptive_weights: false
+    use_polarity: false
+    use_softplus: false
+    use_positive_normalization: false
+    dual_bottom_up: false
+    share_bottom_up: false
+    use_polarity_regularization: false
+    use_ema_distillation: false
 train:
   epochs: 30
   batch_size: 16
@@ -48,4 +50,4 @@ eval:
   score_threshold: 0.25
   nms_threshold: 0.60
   max_detections: 100
-output_dir: runs/coco_d0_dynamic_bifpn
+output_dir: runs/ablations/coco_d0_a0_fixed_fusion_reference

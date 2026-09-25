@@ -1,7 +1,9 @@
+# Prospective controlled ablation A4: positive_normalization
+# Historical manuscript values must NOT be assigned to this config until rerun.
 model:
-  variant: d7
-  num_classes: 1
-  image_size: 640
+  variant: d0
+  num_classes: 80
+  image_size: 512
   pretrained_backbone: true
   dynamic:
     epsilon: 0.0001
@@ -12,18 +14,18 @@ model:
     ema_rho: 0.999
     distill_intermediate_weight: 0.5
     distill_final_weight: 0.5
-    ablation_id: FULL
+    ablation_id: A4
     adaptive_weights: true
     use_polarity: true
     use_softplus: true
     use_positive_normalization: true
-    dual_bottom_up: true
-    share_bottom_up: true
-    use_polarity_regularization: true
-    use_ema_distillation: true
+    dual_bottom_up: false
+    share_bottom_up: false
+    use_polarity_regularization: false
+    use_ema_distillation: false
 train:
-  epochs: 70
-  batch_size: 4
+  epochs: 30
+  batch_size: 16
   optimizer: adam
   lr: 0.0001
   weight_decay: 0.0
@@ -36,11 +38,10 @@ train:
   num_workers: 4
   save_every: 1
 data:
-  kind: voc
-  image_dir: /path/to/prepared_isles/images
-  annotation_dir: /path/to/prepared_isles/annotations
-  split_file: /path/to/train_ids.txt
-  class_names: [lesion]
+  kind: coco
+  image_dir: /path/to/coco/train2017
+  coco_json: /path/to/coco/annotations/instances_train2017.json
+  class_names: []
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
   horizontal_flip_prob: 0.0
@@ -49,4 +50,4 @@ eval:
   score_threshold: 0.25
   nms_threshold: 0.60
   max_detections: 100
-output_dir: runs/isles_d7_640_dynamic_bifpn
+output_dir: runs/ablations/coco_d0_a4_positive_normalization

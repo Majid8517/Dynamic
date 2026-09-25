@@ -27,13 +27,14 @@ def main():
     ds=build_dataset(cfg,True)
     loader=DataLoader(ds,batch_size=cfg.train.batch_size,shuffle=True,num_workers=cfg.train.num_workers,pin_memory=device.type=="cuda",collate_fn=detection_collate)
     model=DynamicEfficientDet(cfg.model).to(device)
-    teacher=EMATeacher(model,rho=cfg.model.dynamic.ema_rho).to(device)
+    teacher=EMATeacher(model,rho=cfg.model.dynamic.ema_rho).to(device) if cfg.model.dynamic.use_ema_distillation else None
     opt=build_optimizer(model,cfg.train)
     sched=build_scheduler(opt,cfg.train.epochs,cfg.train.warmup_epochs,cfg.train.lr,cfg.train.min_lr)
     scaler=GradScaler(enabled=bool(cfg.train.amp and device.type=="cuda"))
+    print({"ablation_id":cfg.model.dynamic.ablation_id,"ema_teacher":teacher is not None,"output_dir":str(out)})
     for epoch in range(cfg.train.epochs):
         metrics=train_one_epoch(model,teacher,loader,opt,scaler,cfg,device,epoch)
-        sched.step(); rec={"epoch":epoch+1,"lr":opt.param_groups[0]["lr"],**metrics}
+        sched.step(); rec={"epoch":epoch+1,"lr":opt.param_groups[0]["lr"],"ablation_id":cfg.model.dynamic.ablation_id,**metrics}
         print(rec); append_jsonl(out/"train_log.jsonl",rec)
         if (epoch+1)%cfg.train.save_every==0 or epoch+1==cfg.train.epochs:
             save_checkpoint(out/f"checkpoint_epoch_{epoch+1:03d}.pth",model,teacher,opt,sched,scaler,epoch+1,cfg,metrics)
