@@ -25,3 +25,12 @@ BU- is not subtractive. Polarity acts on scalar fusion parameters before softplu
 
 ## Historical-result boundary
 The repository contains legacy research files and historical values. `paper_impl/` is the canonical executable specification going forward. Historical table values are not retroactively attributed to this implementation unless rerun and archived.
+
+
+## Executable ablation provenance
+The A0-A8 YAML files in `configs/ablations/` are prospective controlled
+configurations.  The matrix is machine-validated so exactly one mechanism
+changes between successive variants. Historical ablation numbers are not
+treated as reproduced by these configs until the corresponding runs are
+completed and their resolved YAML, checkpoints, raw evaluator outputs, Git
+commit, software/hardware metadata, seed, and runtime logs are archived.
