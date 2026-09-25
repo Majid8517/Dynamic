@@ -40,7 +40,7 @@ class EfficientDetHead(nn.Module):
         return out
 
 class DynamicEfficientDet(nn.Module):
-    """EfficientNet backbone + Dynamic BiFPN + EfficientDet-style heads."""
+    """EfficientNet backbone + configurable Dynamic BiFPN + EfficientDet-style heads."""
     def __init__(self, config: ModelConfig):
         super().__init__()
         self.config = config.resolve()
@@ -49,10 +49,19 @@ class DynamicEfficientDet(nn.Module):
             features_only=True, out_indices=(2, 3, 4),
         )
         in_channels = list(self.backbone.feature_info.channels())
+        d = self.config.dynamic
         self.fpn = DynamicBiFPN(
             in_channels, self.config.fpn_channels, self.config.fpn_repeats,
-            self.config.dynamic.epsilon, self.config.dynamic.alpha_max,
-            self.config.dynamic.alpha_init,
+            epsilon=d.epsilon,
+            alpha_max=d.alpha_max,
+            alpha_init=d.alpha_init,
+            adaptive_weights=d.adaptive_weights,
+            use_polarity=d.use_polarity,
+            use_softplus=d.use_softplus,
+            use_positive_normalization=d.use_positive_normalization,
+            dual_bottom_up=d.dual_bottom_up,
+            share_bottom_up=d.share_bottom_up,
+            use_polarity_regularization=d.use_polarity_regularization,
         )
         self.class_net = EfficientDetHead(
             self.config.fpn_channels, self.config.head_repeats, 5,
