@@ -34,6 +34,7 @@ def build_scheduler(optimizer,epochs,warmup_epochs,base_lr,min_lr):
 
 def train_one_epoch(model,teacher,loader,optimizer,scaler,exp_cfg,device,epoch):
     model.train(); totals={k:0.0 for k in ["loss","detection","classification","box","distill","polarity"]}; n=0
+    dcfg=exp_cfg.model.dynamic
     for images,targets in loader:
         images=images.to(device,non_blocking=True)
         targets=[{k:(v.to(device) if torch.is_tensor(v) else v) for k,v in t.items()} for t in targets]
@@ -42,15 +43,26 @@ def train_one_epoch(model,teacher,loader,optimizer,scaler,exp_cfg,device,epoch):
         with autocast(enabled=amp_enabled):
             cls_out,box_out,sfeat=model(images,return_features=True)
             det=detection_loss(cls_out,box_out,targets,exp_cfg.model.image_size,exp_cfg.model.num_classes,exp_cfg.model.num_scales,exp_cfg.model.aspect_ratios,exp_cfg.model.anchor_scale)
-            with torch.no_grad():
-                _,tstates=teacher.model.forward_pyramid(images,return_states=True)
-            dist=topology_distillation_loss(sfeat["states"],tstates,exp_cfg.model.dynamic.distill_intermediate_weight,exp_cfg.model.dynamic.distill_final_weight)
-            pol=model.polarity_regularizer()
-            total=det["detection"]+exp_cfg.model.dynamic.distill_mu*dist+exp_cfg.model.dynamic.polarity_lambda*pol
+            if dcfg.use_ema_distillation:
+                if teacher is None:
+                    raise RuntimeError("EMA distillation enabled but teacher is None")
+                with torch.no_grad():
+                    _,tstates=teacher.model.forward_pyramid(images,return_states=True)
+                dist=topology_distillation_loss(
+                    sfeat["states"],tstates,
+                    dcfg.distill_intermediate_weight,
+                    dcfg.distill_final_weight,
+                )
+            else:
+                dist=det["detection"].new_zeros(())
+            pol=model.polarity_regularizer() if dcfg.use_polarity_regularization else det["detection"].new_zeros(())
+            total=det["detection"]+dcfg.distill_mu*dist+dcfg.polarity_lambda*pol
         scaler.scale(total).backward(); scaler.unscale_(optimizer)
         if exp_cfg.train.grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(model.parameters(),exp_cfg.train.grad_clip_norm)
-        scaler.step(optimizer); scaler.update(); teacher.update(model)
+        scaler.step(optimizer); scaler.update()
+        if teacher is not None:
+            teacher.update(model)
         vals={"loss":total,"detection":det["detection"],"classification":det["classification"],"box":det["box"],"distill":dist,"polarity":pol}
         for k,v in vals.items(): totals[k]+=float(v.detach())
         n+=1
@@ -70,7 +82,20 @@ def predict_dataset(model,loader,exp_cfg,device):
 
 def save_checkpoint(path,model,teacher,optimizer,scheduler,scaler,epoch,exp_cfg,metrics=None):
     path=Path(path); path.parent.mkdir(parents=True,exist_ok=True)
-    torch.save({"epoch":epoch,"model":model.state_dict(),"teacher":teacher.state_dict(),"optimizer":optimizer.state_dict(),"scheduler":scheduler.state_dict() if scheduler else None,"scaler":scaler.state_dict() if scaler else None,"config":exp_cfg.to_dict(),"git_commit":git_commit_or_unknown(),"metrics":metrics or {},"torch_version":torch.__version__},path)
+    teacher_state=teacher.state_dict() if teacher is not None else None
+    torch.save({
+        "epoch":epoch,
+        "model":model.state_dict(),
+        "teacher":teacher_state,
+        "optimizer":optimizer.state_dict(),
+        "scheduler":scheduler.state_dict() if scheduler else None,
+        "scaler":scaler.state_dict() if scaler else None,
+        "config":exp_cfg.to_dict(),
+        "ablation_id":exp_cfg.model.dynamic.ablation_id,
+        "git_commit":git_commit_or_unknown(),
+        "metrics":metrics or {},
+        "torch_version":torch.__version__,
+    },path)
 
 def append_jsonl(path,record):
     path=Path(path); path.parent.mkdir(parents=True,exist_ok=True)
