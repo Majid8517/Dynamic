@@ -1,0 +1,53 @@
+# Prospective controlled ablation A8: full_with_ema
+# Historical manuscript values must NOT be assigned to this config until rerun.
+model:
+  variant: d0
+  num_classes: 80
+  image_size: 512
+  pretrained_backbone: true
+  dynamic:
+    epsilon: 0.0001
+    alpha_max: 0.95
+    alpha_init: 0.02
+    distill_mu: 0.10
+    polarity_lambda: 0.001
+    ema_rho: 0.999
+    distill_intermediate_weight: 0.5
+    distill_final_weight: 0.5
+    ablation_id: A8
+    adaptive_weights: true
+    use_polarity: true
+    use_softplus: true
+    use_positive_normalization: true
+    dual_bottom_up: true
+    share_bottom_up: true
+    use_polarity_regularization: true
+    use_ema_distillation: true
+train:
+  epochs: 30
+  batch_size: 16
+  optimizer: adam
+  lr: 0.0001
+  weight_decay: 0.0
+  warmup_epochs: 5
+  min_lr: 0.000001
+  grad_clip_norm: 10.0
+  amp: true
+  seed: 42
+  deterministic: true
+  num_workers: 4
+  save_every: 1
+data:
+  kind: coco
+  image_dir: /path/to/coco/train2017
+  coco_json: /path/to/coco/annotations/instances_train2017.json
+  class_names: []
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+  horizontal_flip_prob: 0.0
+eval:
+  metric: coco
+  score_threshold: 0.25
+  nms_threshold: 0.60
+  max_detections: 100
+output_dir: runs/ablations/coco_d0_a8_full_with_ema
