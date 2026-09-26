@@ -40,7 +40,7 @@ data:
   image_dir: /path/to/prepared_isles/images
   annotation_dir: /path/to/prepared_isles/annotations
   split_file: /path/to/train_ids.txt
-  class_names: [lesion]
+  class_names: [IschemicStroke]
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
   horizontal_flip_prob: 0.0

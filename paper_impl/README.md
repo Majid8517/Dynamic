@@ -46,6 +46,8 @@ data/isles/
   eval_ids.txt
 ```
 
+The released prepared detector artifacts use the Pascal/VOC object label `IschemicStroke`; the ISLES YAML files therefore set `class_names: [IschemicStroke]` so the XML boxes are not silently filtered.
+
 Audit a split before training:
 ```bash
 python -m paper_impl.audit_dataset --train-ids train_ids.txt --eval-ids eval_ids.txt --annotation-dir data/isles/annotations
