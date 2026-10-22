@@ -32,6 +32,10 @@ class DynamicBiFPNConfig:
     use_polarity_regularization: bool = True
     use_ema_distillation: bool = True
 
+    # Opt-in P7 two-input node; False preserves legacy graphs/checkpoint keys.
+    # Change only in a new matched experiment, never retroactively.
+    p7_canonical_fusion: bool = False
+
     def validate(self) -> None:
         if self.epsilon <= 0:
             raise ValueError("epsilon must be > 0")

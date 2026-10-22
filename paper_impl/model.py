@@ -61,6 +61,7 @@ class DynamicEfficientDet(nn.Module):
             use_positive_normalization=d.use_positive_normalization,
             dual_bottom_up=d.dual_bottom_up,
             share_bottom_up=d.share_bottom_up,
+            p7_canonical_fusion=d.p7_canonical_fusion,
             use_polarity_regularization=d.use_polarity_regularization,
         )
         self.class_net = EfficientDetHead(

@@ -110,16 +110,19 @@ class DynamicBiFPNCell(nn.Module):
     With dual_bottom_up=True it performs TD -> BU+ -> BU-.
     When share_bottom_up=True the exact BU fusion/refinement modules are reused
     in BU+ and BU-, making parameter sharing structural and testable.
+    p7_canonical_fusion=True uses two distinct inputs at P7 in each BU pass;
+    default False retains historical three-input (duplicated-P7) checkpoints.
     """
     def __init__(
         self, channels, epsilon, alpha_max, alpha_init,
         adaptive_weights=True, use_polarity=True, use_softplus=True,
         use_positive_normalization=True, dual_bottom_up=True,
-        share_bottom_up=True,
+        share_bottom_up=True, p7_canonical_fusion=False,
     ):
         super().__init__()
         self.dual_bottom_up = bool(dual_bottom_up)
         self.share_bottom_up = bool(share_bottom_up)
+        self.p7_canonical_fusion = bool(p7_canonical_fusion)
         fusion_kw = dict(
             epsilon=epsilon, alpha_max=alpha_max, alpha_init=alpha_init,
             adaptive_weights=adaptive_weights, use_polarity=use_polarity,
@@ -128,10 +131,16 @@ class DynamicBiFPNCell(nn.Module):
         )
         self.td_fusions = nn.ModuleList([PolarityAwareFusion(2, **fusion_kw) for _ in range(4)])
         self.td_refine = nn.ModuleList([SeparableRefine(channels) for _ in range(4)])
-        self.bu_fusions = nn.ModuleList([PolarityAwareFusion(3, **fusion_kw) for _ in range(4)])
+        self.bu_fusions = nn.ModuleList([
+            PolarityAwareFusion(2 if self.p7_canonical_fusion and idx == 3 else 3, **fusion_kw)
+            for idx in range(4)
+        ])
         self.bu_refine = nn.ModuleList([SeparableRefine(channels) for _ in range(4)])
         if self.dual_bottom_up and not self.share_bottom_up:
-            self.bu_minus_fusions = nn.ModuleList([PolarityAwareFusion(3, **fusion_kw) for _ in range(4)])
+            self.bu_minus_fusions = nn.ModuleList([
+                PolarityAwareFusion(2 if self.p7_canonical_fusion and idx == 3 else 3, **fusion_kw)
+                for idx in range(4)
+            ])
             self.bu_minus_refine = nn.ModuleList([SeparableRefine(channels) for _ in range(4)])
         else:
             self.bu_minus_fusions = None
@@ -159,7 +168,9 @@ class DynamicBiFPNCell(nn.Module):
         bu_plus[0] = td[0]
         for level in range(1, 5):
             propagated = self._down(bu_plus[level - 1], td[level])
-            fused = self.bu_fusions[level - 1]([p[level], td[level], propagated], polarity=+1)
+            inputs = ([p[level], propagated] if self.p7_canonical_fusion and level == 4
+                      else [p[level], td[level], propagated])
+            fused = self.bu_fusions[level - 1](inputs, polarity=+1)
             bu_plus[level] = self.bu_refine[level - 1](fused)
 
         if not self.dual_bottom_up:
@@ -171,7 +182,9 @@ class DynamicBiFPNCell(nn.Module):
             bu_minus[0] = bu_plus[0]
             for level in range(1, 5):
                 propagated = self._down(bu_minus[level - 1], bu_plus[level])
-                fused = minus_fusions[level - 1]([bu_plus[level], td[level], propagated], polarity=-1)
+                inputs = ([bu_plus[level], propagated] if self.p7_canonical_fusion and level == 4
+                          else [bu_plus[level], td[level], propagated])
+                fused = minus_fusions[level - 1](inputs, polarity=-1)
                 bu_minus[level] = minus_refine[level - 1](fused)
 
         state = CellState(td=td, bu_plus=bu_plus, bu_minus=bu_minus)
@@ -189,7 +202,7 @@ class DynamicBiFPN(nn.Module):
         alpha_max=0.95, alpha_init=0.02, adaptive_weights=True,
         use_polarity=True, use_softplus=True, use_positive_normalization=True,
         dual_bottom_up=True, share_bottom_up=True,
-        use_polarity_regularization=True,
+        use_polarity_regularization=True, p7_canonical_fusion=False,
     ):
         super().__init__()
         if len(in_channels) != 3:
@@ -206,6 +219,7 @@ class DynamicBiFPN(nn.Module):
                 use_positive_normalization=use_positive_normalization,
                 dual_bottom_up=dual_bottom_up,
                 share_bottom_up=share_bottom_up,
+                p7_canonical_fusion=p7_canonical_fusion,
             ) for _ in range(repeats)
         ])
 
